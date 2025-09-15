@@ -298,6 +298,11 @@
           <input id="runsPerDay" type="number" min="1" value="10" />
         </div>
 
+        <div class="param-block">
+          <label>Загрузка машины, кг</label>
+          <input id="machineLoad" type="number" min="1" value="5" />
+        </div>
+
         <hr style="margin:15px 0;border:none;border-top:1px solid var(--border)" />
 
         <div class="section-title">Текущие моющие средства</div>
@@ -362,6 +367,7 @@
               <tbody>
                 <tr><td style="padding:8px">Стоимость 1 кг (химия)</td><td id="t_old_chem" style="padding:8px">—</td><td id="t_new_chem" style="padding:8px">—</td></tr>
                 <tr><td style="padding:8px">Стирок в день</td><td id="t_old_runs" style="padding:8px">—</td><td id="t_new_runs" style="padding:8px">—</td></tr>
+                <tr><td style="padding:8px">Объём в день (кг)</td><td id="t_old_vol" style="padding:8px">—</td><td id="t_new_vol" style="padding:8px">—</td></tr>
                 <tr><td style="padding:8px">Экономия в месяц (≈22 раб. дня)</td><td colspan="2" id="t_month_save" style="padding:8px">—</td></tr>
                 <tr><td style="padding:8px">Экономия в год (≈264 раб. дня)</td><td colspan="2" id="t_year_save" style="padding:8px">—</td></tr>
               </tbody>
@@ -385,6 +391,8 @@
         chemCost: 'Стоимость 1 кг (химия)',
         chemistry: 'Химия',
         runsPerDay: 'Стирок в день',
+        machineLoad: 'Загрузка машины, кг',
+        volumePerDay: 'Объём в день (кг)',
         monthSaving: 'Экономия в месяц (≈22 раб. дня)', 
         yearSaving: 'Экономия в год (≈264 раб. дня)'
       }, 
@@ -395,6 +403,8 @@
         chemCost: 'Cost per kg (chemistry)',
         chemistry: 'Chemistry',
         runsPerDay: 'Runs per day',
+        machineLoad: 'Machine load, kg',
+        volumePerDay: 'Volume per day (kg)',
         monthSaving: 'Monthly saving (≈22 work days)', 
         yearSaving: 'Yearly saving (≈264 work days)'
       }
@@ -405,6 +415,7 @@
 
     let state = {
       runsPerDay: 10,
+      machineLoad: 5,
       current: [],
       new: [],
       lang: 'ru'
@@ -491,7 +502,8 @@
       const newChem = costPerKg(state.new);
       const savePerKg = oldChem - newChem;
 
-      const dailySaving = savePerKg * state.runsPerDay * 5; // 5 кг на стирку
+      const volumePerDay = state.runsPerDay * state.machineLoad;
+      const dailySaving = savePerKg * volumePerDay;
       const monthlySaving = dailySaving * 22;
       const yearlySaving = dailySaving * 264;
 
@@ -504,6 +516,8 @@
       $('t_new_chem').innerText = money(newChem);
       $('t_old_runs').innerText = state.runsPerDay;
       $('t_new_runs').innerText = state.runsPerDay;
+      $('t_old_vol').innerText = volumePerDay + ' кг';
+      $('t_new_vol').innerText = volumePerDay + ' кг';
       $('t_month_save').innerText = money(monthlySaving);
       $('t_year_save').innerText = money(yearlySaving);
 
@@ -566,10 +580,18 @@
 
     // Инициализация событий
     document.addEventListener('DOMContentLoaded', function() {
-      // Привязка поля количества стирок
+      // Привязка полей параметров
       $('runsPerDay').addEventListener('input', ()=>{
         if (validateInput($('runsPerDay'), 1)) {
           state.runsPerDay = parseInt($('runsPerDay').value);
+          saveState(); 
+          compute();
+        }
+      });
+
+      $('machineLoad').addEventListener('input', ()=>{
+        if (validateInput($('machineLoad'), 1)) {
+          state.machineLoad = parseInt($('machineLoad').value);
           saveState(); 
           compute();
         }
@@ -584,6 +606,7 @@
 
       // Установка начальных значений
       $('runsPerDay').value = state.runsPerDay;
+      $('machineLoad').value = state.machineLoad;
 
       renderTables(); 
       compute();
