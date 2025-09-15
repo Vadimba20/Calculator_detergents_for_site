@@ -1,20 +1,10 @@
-Вот оптимизированный код для размещения на Tilda с удалёнными расчётами воды и электроэнергии, оставлены только расчёты моющих средств:
-
-```html
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Калькулятор экономии моющих средств</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%232c7be5%22/></svg>">
-  <meta name="description" content="Онлайн-калькулятор экономии моющих средств — расчёт стоимости 1 кг, экономии и производительности. Работает локально и на GitHub Pages." />
-
-  <!-- CDN libraries -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/dist/jspdf.plugin.autotable.min.js"></script>
-
   <style>
     :root {
       --blue: #007BCC;
@@ -50,17 +40,16 @@
     }
 
     .logo {
-      width: 200px;
-      height: 200px;
+      width: 60px;
+      height: 60px;
       border-radius: 10px;
-      background: url('https://static.tildacdn.com/tild6432-6161-4033-a336-663833306334/_.png') no-repeat center center; 
-      background-size: contain;
+      background: var(--blue);
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
       font-weight: 700;
-      font-size: 200px;
+      font-size: 24px;
     }
 
     h1 {
@@ -273,48 +262,12 @@
     .validation-error {
       border: 1px solid #e53935 !important;
     }
-
-    .tooltip {
-      position: relative;
-      display: inline-block;
-      border-bottom: 1px dotted #ccc;
-      cursor: help;
-    }
-
-    .tooltip .tooltiptext {
-      visibility: hidden;
-      width: 200px;
-      background-color: #555;
-      color: #fff;
-      text-align: center;
-      border-radius: 6px;
-      padding: 5px;
-      position: absolute;
-      z-index: 1;
-      bottom: 125%;
-      left: 50%;
-      margin-left: -100px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      font-size: 12px;
-    }
-
-    .tooltip:hover .tooltiptext {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    .info-text {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 4px;
-    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <div class="logo"></div>
+      <div class="logo">C</div>
       <div>
         <h1 id="appTitle">Калькулятор экономии моющих средств</h1>
         <p class="lead">Покажите клиенту экономию при переходе на современные средства</p>
@@ -325,7 +278,6 @@
           <option value="ru">RU</option>
           <option value="en">EN</option>
         </select>
-        <button id="exportBtn" class="btn btn-secondary">Экспорт в PDF</button>
       </div>
     </header>
 
@@ -402,7 +354,7 @@
     </main>
 
     <footer>
-      <div>Один файл: <strong>index.html</strong> — работает локально и на GitHub Pages / Netlify.</div>
+      <div>Калькулятор экономии моющих средств</div>
     </footer>
   </div>
 
@@ -410,21 +362,21 @@
     const I18N = {
       ru: {
         appTitle: 'Калькулятор экономии моющих средств',
-        add: '+ Добавить средство', reset: 'Сбросить', calc: 'Рассчитать', export: 'Экспорт в PDF', resetAll: 'Сбросить всё', autosaveOn: 'Автосохранение: включено',
-        reportTitle: 'Отчёт по экономии',
+        add: '+ Добавить средство', reset: 'Сбросить',
         parameter: 'Показатель', current: 'Текущий', new: 'Новый',
         chemCost: 'Стоимость 1 кг (химия)',
         chemistry: 'Химия',
-        monthSaving: 'Экономия в месяц (≈22 раб. дня)', yearSaving: 'Экономия в год (≈264 раб. дня)'
+        monthSaving: 'Экономия в месяц (≈22 раб. дня)', 
+        yearSaving: 'Экономия в год (≈264 раб. дня)'
       }, 
       en: {
         appTitle: 'Detergent Savings Calculator', 
-        add: '+ Add detergent', reset: 'Reset', calc: 'Calculate', export: 'Export to PDF', resetAll: 'Reset all', autosaveOn: 'Autosave: on',
-        reportTitle: 'Savings report',
+        add: '+ Add detergent', reset: 'Reset',
         parameter: 'Parameter', current: 'Current', new: 'New',
         chemCost: 'Cost per kg (chemistry)',
         chemistry: 'Chemistry',
-        monthSaving: 'Monthly saving (≈22 work days)', yearSaving: 'Yearly saving (≈264 work days)'
+        monthSaving: 'Monthly saving (≈22 work days)', 
+        yearSaving: 'Yearly saving (≈264 work days)'
       }
     }
 
@@ -493,17 +445,11 @@
       state.new.forEach((it,idx)=> newBody.appendChild(makeRow(it,'new',idx)));
     }
 
-    function addDetergent(type){ state[type].push({name:'',price:0,weight:1,dose:0}); renderTables(); saveState(); }
+    function addDetergent(type){ state[type].push({name:'',price:0,weight:1,dose:0}); renderTables(); saveState(); compute(); }
     function clearTable(type){ if(confirm('Очистить список?')){ state[type]=[]; renderTables(); saveState(); compute(); } }
 
-    if(!state.current.length) state.current.push({name:'Пример',price:0,weight:1,dose:0});
-    if(!state.new.length) state.new.push({name:'Новое',price:0,weight:1,dose:0});
-
-    $('addCurrent').addEventListener('click', ()=>addDetergent('current'));
-    $('addNew').addEventListener('click', ()=>addDetergent('new'));
-    $('clearCurrent').addEventListener('click', ()=>clearTable('current'));
-    $('clearNew').addEventListener('click', ()=>clearTable('new'));
-    $('resetBtn').addEventListener('click', ()=>{ if(confirm('Сбросить все данные?')){ localStorage.removeItem('detergent_calc_v1'); location.reload(); } });
+    if(!state.current.length) state.current.push({name:'Пример',price:1000,weight:5,dose:50});
+    if(!state.new.length) state.new.push({name:'Новое',price:800,weight:5,dose:30});
 
     function costPerKg(list){ 
       if(!Array.isArray(list) || !list.length) return 0; 
@@ -524,7 +470,7 @@
       const newChem = costPerKg(state.new);
       const savePerKg = oldChem - newChem;
 
-      const dailySaving = savePerKg * 100; // Упрощённый расчёт
+      const dailySaving = savePerKg * 100;
       const monthlySaving = dailySaving * 22;
       const yearlySaving = dailySaving * 264;
 
@@ -544,11 +490,11 @@
       if(!chart){
         chart = new Chart(ctx, {
           type: 'bar',
-           {
+          data: {
             labels:[I18N[state.lang].chemistry],
             datasets:[
-              {label: I18N[state.lang].current, dataOld, backgroundColor: 'rgba(0,123,204,0.8)'},
-              {label: I18N[state.lang].new, dataNew, backgroundColor: 'rgba(255,153,0,0.8)'}
+              {label: I18N[state.lang].current, data: dataOld, backgroundColor: 'rgba(0,123,204,0.8)'},
+              {label: I18N[state.lang].new, data: dataNew, backgroundColor: 'rgba(255,153,0,0.8)'}
             ]
           },
           options:{
@@ -584,7 +530,6 @@
       $('addNew').innerText = s.add || '+ Add';
       $('clearCurrent').innerText = s.reset || 'Reset';
       $('clearNew').innerText = s.reset || 'Reset';
-      $('exportBtn').innerText = s.export || 'Export';
 
       if (chart) {
         chart.data.labels = [s.chemistry];
@@ -597,37 +542,18 @@
     }
     $('langSelect').addEventListener('change', ()=>{ applyLang($('langSelect').value); compute(); });
 
-    renderTables(); compute();
+    // Инициализация событий
+    document.addEventListener('DOMContentLoaded', function() {
+      $('addCurrent').addEventListener('click', ()=>addDetergent('current'));
+      $('addNew').addEventListener('click', ()=>addDetergent('new'));
+      $('clearCurrent').addEventListener('click', ()=>clearTable('current'));
+      $('clearNew').addEventListener('click', ()=>clearTable('new'));
+
+      renderTables(); 
+      compute();
+    });
 
     window.addEventListener('beforeunload', saveState);
   </script>
 </body>
 </html>
-```
-
-Основные изменения:
-
-1. **Удалены все поля и расчёты, связанные с водой и электроэнергией**:
-   - Удалены поля ввода тарифов воды и электроэнергии
-   - Удалены поля температуры, времени программ и мощности машины
-   - Удалены все расчёты энергии и воды
-   - Удалены соответствующие строки в таблице результатов
-
-2. **Оставлены только расчёты моющих средств**:
-   - Таблицы текущих и новых средств
-   - Расчёт стоимости 1 кг химии
-   - Расчёт экономии на 1 кг
-   - Упрощённый расчёт дневной экономии (без учёта производительности)
-
-3. **Оптимизирован интерфейс**:
-   - Упрощена структура страницы
-   - Удалены ненужные разделы
-   - Сохранена только основная функциональность
-   - Адаптированы надписи и тексты
-
-4. **Подготовлен для Tilda**:
-   - Код готов к размещению в HTML-блоке Tilda
-   - Все зависимости подключены через CDN
-   - Самодостаточный файл без внешних зависимостей
-
-Калькулятор теперь показывает только экономию на моющих средствах без учёта воды и электроэнергии.
