@@ -262,6 +262,14 @@
     .validation-error {
       border: 1px solid #e53935 !important;
     }
+
+    .param-block {
+      margin-bottom: 15px;
+    }
+
+    .param-block:last-child {
+      margin-bottom: 0;
+    }
   </style>
 </head>
 <body>
@@ -270,7 +278,7 @@
       <div class="logo">C</div>
       <div>
         <h1 id="appTitle">Калькулятор экономии моющих средств</h1>
-        <p class="lead">Сравните стоимость 1 кг стирки</p>
+        <p class="lead">Покажите клиенту экономию при переходе на современные средства</p>
       </div>
 
       <div class="top-controls">
@@ -283,6 +291,15 @@
 
     <main>
       <section class="card">
+        <div class="section-title">Параметры</div>
+        
+        <div class="param-block">
+          <label>Количество стирок в день</label>
+          <input id="runsPerDay" type="number" min="1" value="10" />
+        </div>
+
+        <hr style="margin:15px 0;border:none;border-top:1px solid var(--border)" />
+
         <div class="section-title">Текущие моющие средства</div>
         <div class="table-wrap">
           <table id="currentTable" class="dt">
@@ -303,7 +320,7 @@
           <button class="btn btn-outline" id="clearCurrent">Сбросить</button>
         </div>
 
-        <hr style="margin:12px 0;border:none;border-top:1px solid var(--border)" />
+        <hr style="margin:15px 0;border:none;border-top:1px solid var(--border)" />
 
         <div class="section-title">Наши новые средства</div>
         <div class="table-wrap">
@@ -344,6 +361,7 @@
               <thead><tr><th style="text-align:left;padding:8px">Показатель</th><th style="padding:8px">Текущий</th><th style="padding:8px">Новый</th></tr></thead>
               <tbody>
                 <tr><td style="padding:8px">Стоимость 1 кг (химия)</td><td id="t_old_chem" style="padding:8px">—</td><td id="t_new_chem" style="padding:8px">—</td></tr>
+                <tr><td style="padding:8px">Стирок в день</td><td id="t_old_runs" style="padding:8px">—</td><td id="t_new_runs" style="padding:8px">—</td></tr>
                 <tr><td style="padding:8px">Экономия в месяц (≈22 раб. дня)</td><td colspan="2" id="t_month_save" style="padding:8px">—</td></tr>
                 <tr><td style="padding:8px">Экономия в год (≈264 раб. дня)</td><td colspan="2" id="t_year_save" style="padding:8px">—</td></tr>
               </tbody>
@@ -366,6 +384,7 @@
         parameter: 'Показатель', current: 'Текущий', new: 'Новый',
         chemCost: 'Стоимость 1 кг (химия)',
         chemistry: 'Химия',
+        runsPerDay: 'Стирок в день',
         monthSaving: 'Экономия в месяц (≈22 раб. дня)', 
         yearSaving: 'Экономия в год (≈264 раб. дня)'
       }, 
@@ -375,6 +394,7 @@
         parameter: 'Parameter', current: 'Current', new: 'New',
         chemCost: 'Cost per kg (chemistry)',
         chemistry: 'Chemistry',
+        runsPerDay: 'Runs per day',
         monthSaving: 'Monthly saving (≈22 work days)', 
         yearSaving: 'Yearly saving (≈264 work days)'
       }
@@ -384,6 +404,7 @@
     const money = v => (typeof v === 'number' ? v.toFixed(2) + ' ₽' : '—');
 
     let state = {
+      runsPerDay: 10,
       current: [],
       new: [],
       lang: 'ru'
@@ -470,7 +491,7 @@
       const newChem = costPerKg(state.new);
       const savePerKg = oldChem - newChem;
 
-      const dailySaving = savePerKg * 100;
+      const dailySaving = savePerKg * state.runsPerDay * 5; // 5 кг на стирку
       const monthlySaving = dailySaving * 22;
       const yearlySaving = dailySaving * 264;
 
@@ -481,6 +502,8 @@
 
       $('t_old_chem').innerText = money(oldChem);
       $('t_new_chem').innerText = money(newChem);
+      $('t_old_runs').innerText = state.runsPerDay;
+      $('t_new_runs').innerText = state.runsPerDay;
       $('t_month_save').innerText = money(monthlySaving);
       $('t_year_save').innerText = money(yearlySaving);
 
@@ -540,14 +563,27 @@
 
       saveState();
     }
-    $('langSelect').addEventListener('change', ()=>{ applyLang($('langSelect').value); compute(); });
 
     // Инициализация событий
     document.addEventListener('DOMContentLoaded', function() {
+      // Привязка поля количества стирок
+      $('runsPerDay').addEventListener('input', ()=>{
+        if (validateInput($('runsPerDay'), 1)) {
+          state.runsPerDay = parseInt($('runsPerDay').value);
+          saveState(); 
+          compute();
+        }
+      });
+
+      // Привязка кнопок
       $('addCurrent').addEventListener('click', ()=>addDetergent('current'));
       $('addNew').addEventListener('click', ()=>addDetergent('new'));
       $('clearCurrent').addEventListener('click', ()=>clearTable('current'));
       $('clearNew').addEventListener('click', ()=>clearTable('new'));
+      $('langSelect').addEventListener('change', ()=>{ applyLang($('langSelect').value); compute(); });
+
+      // Установка начальных значений
+      $('runsPerDay').value = state.runsPerDay;
 
       renderTables(); 
       compute();
