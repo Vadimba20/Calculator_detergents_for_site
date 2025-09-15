@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Калькулятор экономии моющих средств</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%232c7be5%22/></svg>">
+  <meta name="description" content="Онлайн-калькулятор экономии моющих средств — расчёт стоимости 1 кг, экономии и производительности. Работает локально и на GitHub Pages." />
+
+  <!-- CDN libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/dist/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    :root {
+      --blue: #007BCC;
+      --orange: #FF9900;
+      --muted: #6b7280;
+      --bg: linear-gradient(180deg, #e6f3ff, #ffffff);
+      --card: #ffffff;
+      --text: #0b1220;
+      --border: #e6eef8;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      font-family: 'Inter', 'Roboto', sans-serif;
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 18px auto;
+      padding: 12px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      width: 200px;
+      height: 200px;
+      border-radius: 10px;
+      background: url('https://static.tildacdn.com/tild6432-6161-4033-a336-663833306334/_.png') no-repeat center center; 
+      background-size: contain;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 200px;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    p.lead {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .top-controls {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    select, input[type=search] {
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: white;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--orange);
+      color: white;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--blue);
+      color: var(--blue);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    @media (min-width: 980px) {
+      main { grid-template-columns: 360px 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(15, 30, 60, 0.06);
+      border: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-weight: 600;
+      color: var(--blue);
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input[type=number], input[type=text] {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: white;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 8px;
+    }
+
+    table.dt {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table.dt thead th {
+      background: #f0f7ff;
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    table.dt td {
+      padding: 8px;
+      border-bottom: 1px solid #f4f9ff;
+    }
+
+    table.dt input {
+      width: 100%;
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .remove {
+      color: #e53935;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 640px) {
+      .results-grid { grid-template-columns: 1fr; }
+    }
+
+    .stat {
+      padding: 12px;
+      border-radius: 10px;
+      background: #f8fbff;
+      border: 1px solid #e6f0ff;
+    }
+
+    .stat h4 {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stat p {
+      margin: 6px 0 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    footer {
+      margin-top: 12px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 640px) {
+      table.dt, table.dt thead, table.dt tbody, table.dt th, table.dt td, table.dt tr {
+        display: block;
+      }
+      table.dt thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+      table.dt tr {
+        margin: 0 0 12px;
+      }
+      table.dt td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+      }
+      table.dt td:before {
+        position: absolute;
+        left: 12px;
+        top: 10px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: 600;
+      }
+      table.dt td[data-label="Название"]:before { content: "Название"; }
+      table.dt td[data-label="Цена"]:before { content: "Цена за упаковку (₽)"; }
+      table.dt td[data-label="Вес"]:before { content: "Вес упаковки (кг)"; }
+      table.dt td[data-label="Дозировка"]:before { content: "Дозировка (мл/г)"; }
+      table.dt td[data-label="Действие"]:before { content: ""; }
+    }
+
+    .validation-error {
+      border: 1px solid #e53935 !important;
+    }
+
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      border-bottom: 1px dotted #ccc;
+      cursor: help;
+    }
+
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -100px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 12px;
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .info-text {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo"></div>
+      <div>
+        <h1 id="appTitle">Калькулятор экономии моющих средств</h1>
+        <p class="lead">Покажите клиенту экономию при переходе на современные средства</p>
+      </div>
+
+      <div class="top-controls">
+        <select id="langSelect" title="Language">
+          <option value="ru">RU</option>
+          <option value="en">EN</option>
+        </select>
+        <button id="exportBtn" class="btn btn-secondary">Экспорт в PDF</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <div class="section-title">Текущие моющие средства</div>
+        <div class="table-wrap">
+          <table id="currentTable" class="dt">
+            <thead>
+              <tr>
+                <th>Название</th>
+                <th>Цена за упаковку (₽)</th>
+                <th>Вес упаковки (кг)</th>
+                <th>Дозировка (мл/г) на 1 кг</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="addCurrent">+ Добавить средство</button>
+          <button class="btn btn-outline" id="clearCurrent">Сбросить</button>
+        </div>
+
+        <hr style="margin:12px 0;border:none;border-top:1px solid var(--border)" />
+
+        <div class="section-title">Наши новые средства</div>
+        <div class="table-wrap">
+          <table id="newTable" class="dt">
+            <thead>
+              <tr>
+                <th>Название</th>
+                <th>Цена за упаковку (₽)</th>
+                <th>Вес упаковки (кг)</th>
+                <th>Дозировка (мл/г) на 1 кг</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="addNew">+ Добавить средство</button>
+          <button class="btn btn-outline" id="clearNew">Сбросить</button>
+        </div>
+      </section>
+
+      <section>
+        <div class="card">
+          <div class="section-title">Результаты</div>
+
+          <div class="results-grid">
+            <div class="stat"><h4>Стоимость 1 кг (химия)</h4><p id="costOldChem">— ₽</p></div>
+            <div class="stat"><h4>Стоимость 1 кг (химия) — новая</h4><p id="costNewChem">— ₽</p></div>
+            <div class="stat"><h4>Экономия на 1 кг</h4><p id="savingPerKg">— ₽</p></div>
+            <div class="stat"><h4>Экономия в день</h4><p id="savingDay">— ₽</p></div>
+          </div>
+
+          <div style="margin-top:12px"><canvas id="chartCompare" height="160"></canvas></div>
+
+          <div style="margin-top:12px;overflow:auto">
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr><th style="text-align:left;padding:8px">Показатель</th><th style="padding:8px">Текущий</th><th style="padding:8px">Новый</th></tr></thead>
+              <tbody>
+                <tr><td style="padding:8px">Стоимость 1 кг (химия)</td><td id="t_old_chem" style="padding:8px">—</td><td id="t_new_chem" style="padding:8px">—</td></tr>
+                <tr><td style="padding:8px">Экономия в месяц (≈22 раб. дня)</td><td colspan="2" id="t_month_save" style="padding:8px">—</td></tr>
+                <tr><td style="padding:8px">Экономия в год (≈264 раб. дня)</td><td colspan="2" id="t_year_save" style="padding:8px">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div>Один файл: <strong>index.html</strong> — работает локально и на GitHub Pages / Netlify.</div>
+    </footer>
+  </div>
+
+  <script>
+    const I18N = {
+      ru: {
+        appTitle: 'Калькулятор экономии моющих средств',
+        add: '+ Добавить средство', reset: 'Сбросить', calc: 'Рассчитать', export: 'Экспорт в PDF', resetAll: 'Сбросить всё', autosaveOn: 'Автосохранение: включено',
+        reportTitle: 'Отчёт по экономии',
+        parameter: 'Показатель', current: 'Текущий', new: 'Новый',
+        chemCost: 'Стоимость 1 кг (химия)',
+        chemistry: 'Химия',
+        monthSaving: 'Экономия в месяц (≈22 раб. дня)', yearSaving: 'Экономия в год (≈264 раб. дня)'
+      }, 
+      en: {
+        appTitle: 'Detergent Savings Calculator', 
+        add: '+ Add detergent', reset: 'Reset', calc: 'Calculate', export: 'Export to PDF', resetAll: 'Reset all', autosaveOn: 'Autosave: on',
+        reportTitle: 'Savings report',
+        parameter: 'Parameter', current: 'Current', new: 'New',
+        chemCost: 'Cost per kg (chemistry)',
+        chemistry: 'Chemistry',
+        monthSaving: 'Monthly saving (≈22 work days)', yearSaving: 'Yearly saving (≈264 work days)'
+      }
+    }
+
+    const $ = id => document.getElementById(id);
+    const money = v => (typeof v === 'number' ? v.toFixed(2) + ' ₽' : '—');
+
+    let state = {
+      current: [],
+      new: [],
+      lang: 'ru'
+    }
+
+    function loadState(){
+      try{const s = JSON.parse(localStorage.getItem('detergent_calc_v1')); if(s) state = Object.assign(state,s);}catch(e){console.warn(e)}
+    }
+    function saveState(){ localStorage.setItem('detergent_calc_v1', JSON.stringify(state)); }
+
+    loadState();
+
+    function validateInput(input, min, max) {
+      const value = parseFloat(input.value);
+      if (isNaN(value) || value < min || (max !== undefined && value > max)) {
+        input.classList.add('validation-error');
+        return false;
+      } else {
+        input.classList.remove('validation-error');
+        return true;
+      }
+    }
+
+    function makeRow(item, tableType, idx){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td data-label="Название"><input type="text" value="${escapeHtml(item.name||'')}" placeholder="Название" data-field="name"/></td>
+        <td data-label="Цена"><input type="number" min="0" step="0.01" value="${item.price||0}" data-field="price"/></td>
+        <td data-label="Вес"><input type="number" min="0.001" step="0.001" value="${item.weight||1}" data-field="weight"/></td>
+        <td data-label="Дозировка"><input type="number" min="0" step="0.01" value="${item.dose||0}" data-field="dose"/></td>
+        <td data-label="Действие"><button class="remove" title="Удалить">✖</button></td>
+      `;
+      tr.querySelectorAll('input').forEach(inp=>{
+        inp.addEventListener('input', ()=>{
+          const field = inp.getAttribute('data-field');
+          const val = inp.type === 'number' ? parseFloat(inp.value||0) : inp.value;
+
+          if (inp.type === 'number') {
+            const min = field === 'weight' ? 0.001 : 0;
+            validateInput(inp, min);
+          }
+
+          state[tableType][idx][field] = val;
+          saveState(); compute();
+        });
+      });
+      tr.querySelector('.remove').addEventListener('click', ()=>{
+        state[tableType].splice(idx,1); renderTables(); saveState(); compute();
+      });
+      return tr;
+    }
+
+    function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'&quot;'); }
+
+    function renderTables(){
+      const curBody = $('currentTable').querySelector('tbody'); curBody.innerHTML='';
+      state.current.forEach((it,idx)=> curBody.appendChild(makeRow(it,'current',idx)));
+      const newBody = $('newTable').querySelector('tbody'); newBody.innerHTML='';
+      state.new.forEach((it,idx)=> newBody.appendChild(makeRow(it,'new',idx)));
+    }
+
+    function addDetergent(type){ state[type].push({name:'',price:0,weight:1,dose:0}); renderTables(); saveState(); }
+    function clearTable(type){ if(confirm('Очистить список?')){ state[type]=[]; renderTables(); saveState(); compute(); } }
+
+    if(!state.current.length) state.current.push({name:'Пример',price:0,weight:1,dose:0});
+    if(!state.new.length) state.new.push({name:'Новое',price:0,weight:1,dose:0});
+
+    $('addCurrent').addEventListener('click', ()=>addDetergent('current'));
+    $('addNew').addEventListener('click', ()=>addDetergent('new'));
+    $('clearCurrent').addEventListener('click', ()=>clearTable('current'));
+    $('clearNew').addEventListener('click', ()=>clearTable('new'));
+    $('resetBtn').addEventListener('click', ()=>{ if(confirm('Сбросить все данные?')){ localStorage.removeItem('detergent_calc_v1'); location.reload(); } });
+
+    function costPerKg(list){ 
+      if(!Array.isArray(list) || !list.length) return 0; 
+      let sum=0; 
+      list.forEach(it=>{ 
+        const price=Number(it.price)||0; 
+        const weight=Number(it.weight)||1; 
+        const dose=Number(it.dose)||0; 
+        const fraction = dose / (weight*1000); 
+        sum += price * fraction; 
+      }); 
+      return sum; 
+    }
+
+    let chart;
+    function compute(){
+      const oldChem = costPerKg(state.current);
+      const newChem = costPerKg(state.new);
+      const savePerKg = oldChem - newChem;
+
+      const dailySaving = savePerKg * 100; // Упрощённый расчёт
+      const monthlySaving = dailySaving * 22;
+      const yearlySaving = dailySaving * 264;
+
+      $('costOldChem').innerText = money(oldChem);
+      $('costNewChem').innerText = money(newChem);
+      $('savingPerKg').innerText = money(savePerKg);
+      $('savingDay').innerText = money(dailySaving);
+
+      $('t_old_chem').innerText = money(oldChem);
+      $('t_new_chem').innerText = money(newChem);
+      $('t_month_save').innerText = money(monthlySaving);
+      $('t_year_save').innerText = money(yearlySaving);
+
+      const ctx = $('chartCompare').getContext('2d');
+      const dataOld = [oldChem];
+      const dataNew = [newChem];
+      if(!chart){
+        chart = new Chart(ctx, {
+          type: 'bar',
+           {
+            labels:[I18N[state.lang].chemistry],
+            datasets:[
+              {label: I18N[state.lang].current, dataOld, backgroundColor: 'rgba(0,123,204,0.8)'},
+              {label: I18N[state.lang].new, dataNew, backgroundColor: 'rgba(255,153,0,0.8)'}
+            ]
+          },
+          options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            scales:{y:{beginAtZero:true}},
+            plugins: {
+              legend: { position: 'top' },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' ₽';
+                  }
+                }
+              }
+            }
+          }
+        });
+      } else {
+        chart.data.datasets[0].data = dataOld; 
+        chart.data.datasets[1].data = dataNew; 
+        chart.update();
+      }
+
+      saveState();
+    }
+
+    function applyLang(lang){
+      state.lang = lang;
+      const s = I18N[lang] || I18N.ru;
+      $('appTitle').innerText = s.appTitle || 'Calculator';
+      $('addCurrent').innerText = s.add || '+ Add';
+      $('addNew').innerText = s.add || '+ Add';
+      $('clearCurrent').innerText = s.reset || 'Reset';
+      $('clearNew').innerText = s.reset || 'Reset';
+      $('exportBtn').innerText = s.export || 'Export';
+
+      if (chart) {
+        chart.data.labels = [s.chemistry];
+        chart.data.datasets[0].label = s.current;
+        chart.data.datasets[1].label = s.new;
+        chart.update();
+      }
+
+      saveState();
+    }
+    $('langSelect').addEventListener('change', ()=>{ applyLang($('langSelect').value); compute(); });
+
+    renderTables(); compute();
+
+    window.addEventListener('beforeunload', saveState);
+  </script>
+</body>
+</html>
