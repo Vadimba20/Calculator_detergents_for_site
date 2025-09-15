@@ -270,6 +270,96 @@
     .param-block:last-child {
       margin-bottom: 0;
     }
+
+    .glasses-container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 40px;
+      height: 200px;
+      margin: 20px 0;
+      position: relative;
+    }
+
+    .glass {
+      width: 80px;
+      height: 160px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .glass-base {
+      width: 100px;
+      height: 20px;
+      background: #ddd;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .glass-body {
+      width: 80px;
+      height: 140px;
+      border: 3px solid #ccc;
+      border-top: none;
+      border-radius: 0 0 15px 15px;
+      position: relative;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    .liquid {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      transition: height 1s ease-in-out;
+    }
+
+    .old-liquid {
+      background: linear-gradient(to top, #007BCC, #3395e0);
+    }
+
+    .new-liquid {
+      background: linear-gradient(to top, #FF9900, #ffad33);
+    }
+
+    .glass-label {
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .value-label {
+      position: absolute;
+      width: 100px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 12px;
+      color: #333;
+    }
+
+    .old-value {
+      color: #007BCC;
+    }
+
+    .new-value {
+      color: #FF9900;
+    }
+
+    .savings-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px;
+      border-radius: 20px;
+      border: 2px dashed #FF9900;
+      font-weight: bold;
+      color: #FF9900;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
@@ -278,7 +368,7 @@
       <div class="logo">C</div>
       <div>
         <h1 id="appTitle">Калькулятор экономии моющих средств</h1>
-        <p class="lead">Введите данные в разделы "Моющие средства" и "Параметры"</p>
+        <p class="lead">Покажите клиенту экономию при переходе на современные средства</p>
       </div>
 
       <div class="top-controls">
@@ -359,7 +449,29 @@
             <div class="stat"><h4>Экономия в день</h4><p id="savingDay">— ₽</p></div>
           </div>
 
-          <div style="margin-top:12px"><canvas id="chartCompare" height="160"></canvas></div>
+          <div class="glasses-container">
+            <div class="glass">
+              <div class="glass-body">
+                <div class="liquid old-liquid" id="oldLiquid" style="height: 0%"></div>
+              </div>
+              <div class="glass-base"></div>
+              <div class="glass-label">Текущий</div>
+              <div class="value-label old-value" id="oldValueLabel" style="bottom: -30px">0 ₽</div>
+            </div>
+            
+            <div class="glass">
+              <div class="glass-body">
+                <div class="liquid new-liquid" id="newLiquid" style="height: 0%"></div>
+              </div>
+              <div class="glass-base"></div>
+              <div class="glass-label">Новый</div>
+              <div class="value-label new-value" id="newValueLabel" style="bottom: -30px">0 ₽</div>
+            </div>
+            
+            <div class="savings-indicator" id="savingsIndicator" style="display: none;">
+              Экономия: <span id="savingsAmount">0 ₽</span>
+            </div>
+          </div>
 
           <div style="margin-top:12px;overflow:auto">
             <table style="width:100%;border-collapse:collapse">
@@ -394,7 +506,10 @@
         machineLoad: 'Загрузка машины, кг',
         volumePerDay: 'Объём в день (кг)',
         monthSaving: 'Экономия в месяц (≈22 раб. дня)', 
-        yearSaving: 'Экономия в год (≈264 раб. дня)'
+        yearSaving: 'Экономия в год (≈264 раб. дня)',
+        currentLabel: 'Текущий',
+        newLabel: 'Новый',
+        savings: 'Экономия:'
       }, 
       en: {
         appTitle: 'Detergent Savings Calculator', 
@@ -406,7 +521,10 @@
         machineLoad: 'Machine load, kg',
         volumePerDay: 'Volume per day (kg)',
         monthSaving: 'Monthly saving (≈22 work days)', 
-        yearSaving: 'Yearly saving (≈264 work days)'
+        yearSaving: 'Yearly saving (≈264 work days)',
+        currentLabel: 'Current',
+        newLabel: 'New',
+        savings: 'Savings:'
       }
     }
 
@@ -496,7 +614,31 @@
       return sum; 
     }
 
-    let chart;
+    function updateGlasses(oldCost, newCost, savings) {
+      // Определяем максимальное значение для масштабирования
+      const maxCost = Math.max(oldCost, newCost, 50);
+      
+      // Рассчитываем высоту жидкости (в процентах)
+      const oldHeight = (oldCost / maxCost) * 100;
+      const newHeight = (newCost / maxCost) * 100;
+      
+      // Обновляем визуализацию
+      $('oldLiquid').style.height = oldHeight + '%';
+      $('newLiquid').style.height = newHeight + '%';
+      
+      // Обновляем значения
+      $('oldValueLabel').textContent = money(oldCost);
+      $('newValueLabel').textContent = money(newCost);
+      $('savingsAmount').textContent = money(savings);
+      
+      // Показываем индикатор экономии, если есть экономия
+      if (savings > 0) {
+        $('savingsIndicator').style.display = 'block';
+      } else {
+        $('savingsIndicator').style.display = 'none';
+      }
+    }
+
     function compute(){
       const oldChem = costPerKg(state.current);
       const newChem = costPerKg(state.new);
@@ -521,40 +663,8 @@
       $('t_month_save').innerText = money(monthlySaving);
       $('t_year_save').innerText = money(yearlySaving);
 
-      const ctx = $('chartCompare').getContext('2d');
-      const dataOld = [oldChem];
-      const dataNew = [newChem];
-      if(!chart){
-        chart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels:[I18N[state.lang].chemistry],
-            datasets:[
-              {label: I18N[state.lang].current, data: dataOld, backgroundColor: 'rgba(0,123,204,0.8)'},
-              {label: I18N[state.lang].new, data: dataNew, backgroundColor: 'rgba(255,153,0,0.8)'}
-            ]
-          },
-          options:{
-            responsive:true,
-            maintainAspectRatio:false,
-            scales:{y:{beginAtZero:true}},
-            plugins: {
-              legend: { position: 'top' },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' ₽';
-                  }
-                }
-              }
-            }
-          }
-        });
-      } else {
-        chart.data.datasets[0].data = dataOld; 
-        chart.data.datasets[1].data = dataNew; 
-        chart.update();
-      }
+      // Обновляем визуализацию стаканов
+      updateGlasses(oldChem, newChem, savePerKg);
 
       saveState();
     }
@@ -567,13 +677,11 @@
       $('addNew').innerText = s.add || '+ Add';
       $('clearCurrent').innerText = s.reset || 'Reset';
       $('clearNew').innerText = s.reset || 'Reset';
-
-      if (chart) {
-        chart.data.labels = [s.chemistry];
-        chart.data.datasets[0].label = s.current;
-        chart.data.datasets[1].label = s.new;
-        chart.update();
-      }
+      
+      // Обновляем надписи на стаканах
+      document.querySelector('.glass-label').innerText = s.currentLabel;
+      document.querySelectorAll('.glass-label')[1].innerText = s.newLabel;
+      document.querySelector('#savingsIndicator').innerHTML = s.savings + ' <span id="savingsAmount">0 ₽</span>';
 
       saveState();
     }
